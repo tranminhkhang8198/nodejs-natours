@@ -29,7 +29,7 @@ exports.getAllTours = catchAsync(async (req, res) => {
     });
 });
 
-exports.getTour = catchAsync(async (req, res) => {
+exports.getTour = catchAsync(async (req, res, next) => {
     const tour = await Tour.findById(req.params.id);
 
     if (!tour) {
@@ -58,7 +58,7 @@ exports.createTour = catchAsync(async (req, res, next) => {
     });
 });
 
-exports.updateTour = catchAsync(async (req, res) => {
+exports.updateTour = catchAsync(async (req, res, next) => {
     const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
         new: true,
         runValidators: true
@@ -76,8 +76,10 @@ exports.updateTour = catchAsync(async (req, res) => {
     });
 });
 
-exports.deleteTour = catchAsync(async (req, res) => {
-    const tour = await Tour.findOneAndDelete(req.params.id);
+exports.deleteTour = catchAsync(async (req, res, next) => {
+    const tour = await Tour.findByIdAndDelete(req.params.id);
+    console.log(req.params.id);
+    console.log(tour);
 
     if (!tour) {
         return next(new AppError('No tour found with that ID', 404));
@@ -165,5 +167,4 @@ exports.getMonthlyPlan = catchAsync(async (req, res) => {
             plan
         }
     });
-
 });
