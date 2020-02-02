@@ -6,6 +6,16 @@ const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
 const sendEmail = require('./../utils/email');
 
+const filterObj = (obj, ...allowedFields) => {
+    const newObj = {};
+
+    Object.keys(obj).forEach(el => {
+        if (allowedFields.includes(el)) newObj[el] = obj[el];
+    });
+
+    return newObj;
+}
+
 const signToken = id => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN
@@ -39,11 +49,11 @@ const createSendToken = (user, statusCode, res) => {
 }
 
 exports.signup = catchAsync(async (req, res, next) => {
-    const { name, email, password, passwordConfirm, passwordChangedAt, role } = req.body;
+    // Filtered out unwanted fields names that are not allowed to be updated
+    const filteredBody = filterObj(req.body, 'name', 'email', 'password', 'passwordConfirm', 'passwordChangedAt', 'role');
 
-    const newUser = await User.create({
-        name, email, password, passwordConfirm, passwordChangedAt, role
-    });
+    // Create user document
+    const newUser = await User.create(filteredBody);
 
     createSendToken(newUser, 201, res);
 });
