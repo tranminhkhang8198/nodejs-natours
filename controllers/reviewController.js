@@ -4,6 +4,10 @@ const catchAsync = require('./../utils/catchAsync');
 const filterObj = require('./../utils/filterObject');
 
 exports.createReview = catchAsync(async (req, res, next) => {
+    // Allow nested routes
+    if (!req.body.tour) req.body.tour = req.params.tourId;
+    if (!req.body.user) req.body.user = req.user.id;
+
     // Filtered out unwanted fields names that are not allowed to be updated
     const filteredBody = filterObj(req.body, 'review', 'rating', 'user', 'tour');
 
