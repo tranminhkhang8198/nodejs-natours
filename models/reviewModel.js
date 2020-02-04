@@ -67,8 +67,6 @@ reviewSchema.statics.calcAverageRatings = async function(tourId) {
         }
     ]);
 
-    console.log(stats);
-
     if (stats.length > 0) {
         await Tour.findByIdAndUpdate(tourId, {
             ratingsQuantity: stats[0].nRating,
@@ -82,6 +80,7 @@ reviewSchema.statics.calcAverageRatings = async function(tourId) {
     }
 }
 
+// QUERY MIDDLEWARE
 reviewSchema.post('save', function() {
     // this points to current review
     // this.constructor points to Review model
@@ -99,6 +98,9 @@ reviewSchema.post(/^findOneAnd/, async function() {
     // await this.findOne(); does NOT work here, query has already executed
     await this.r.constructor.calcAverageRatings(this.r.tour);
 });
+
+// Set index for preventing duplicate reviews
+reviewSchema.index({ tour: 1, user: 1 }, { unique: true });
 
 const Review = mongoose.model('Review', reviewSchema);
 
