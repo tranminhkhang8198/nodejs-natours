@@ -29,3 +29,22 @@ export const login = async (email, password) => {
     }
 }
 
+export const logout = async () => {
+    try {
+        const res = await axios({
+            method: 'GET',
+            url: 'http://127.0.0.1:3000/api/v1/users/logout'
+        });
+
+        if((res.data.status == 'success')) {
+            // MY OWN CODE
+            const JWT_COOKIE_EXPIRES_IN = new Date(Date.now() + 10 * 1000);
+            document.cookie = `jwt=loggedOut;expires=${JWT_COOKIE_EXPIRES_IN};path=/`;
+
+            location.reload(true);
+        }
+
+    } catch (err) {
+        showAlert('error', 'Error logging out! Try again.');
+    }
+}
