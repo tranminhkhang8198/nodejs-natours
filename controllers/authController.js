@@ -25,16 +25,16 @@ const signToken = id => {
 const createSendToken = (user, statusCode, res) => {
     const token = signToken(user._id);
 
-    const cookiesOptions = {
-        expires: new Date(
-            Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
-        ),
-        httpOnly: true
-    };
+    // const cookiesOptions = {
+    //     expires: new Date(
+    //         Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+    //     ),
+    //     httpOnly: true
+    // };
 
-    if (process.env.NODE_ENV === 'production') cookiesOptions.secure = true;
+    // if (process.env.NODE_ENV === 'production') cookiesOptions.secure = true;
 
-    res.cookie('jwt', token, cookiesOptions);
+    // res.cookie('jwt', token, cookiesOptions);
 
     // Remove password from output
     user.password = undefined;
@@ -57,7 +57,6 @@ exports.signup = catchAsync(async (req, res, next) => {
 
     createSendToken(newUser, 201, res);
 });
-
 
 exports.login = catchAsync(async (req, res, next) => {
     const { email, password } = req.body;
@@ -83,6 +82,8 @@ exports.protect = catchAsync(async (req, res, next) => {
 
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies.jwt) {
+        token = req.cookies.jwt;
     }
 
     if (!token) {
@@ -105,6 +106,33 @@ exports.protect = catchAsync(async (req, res, next) => {
 
     // GRANT ACCESS TO PROTECTED ROUTE
     req.user = currentUser;
+    next();
+});
+
+exports.isLoggedIn = catchAsync(async (req, res, next) => {
+    if (req.cookies.jwt) {
+        // 1) Verify token
+        const decoded = await promisify(jwt.verify)(
+            req.cookies.jwt,
+            process.env.JWT_SECRET
+        );
+
+        // 2) Check if user still exists
+        const currentUser = await User.findById(decoded.id);
+        if (!currentUser) {
+            return next();
+        }
+
+        // 3) Check if user changed password after the token was isssued
+        if (currentUser.changedPasswordAfter(decoded.iat)) {
+            return next();
+        }
+
+        // THERE IS A LOGGED IN USER
+        res.locals.user = currentUser;
+        return next();
+    }
+
     next();
 });
 
